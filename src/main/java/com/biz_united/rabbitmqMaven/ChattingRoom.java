@@ -1,7 +1,11 @@
 package com.biz_united.rabbitmqMaven;
 
+import java.awt.BorderLayout;
+import java.awt.LayoutManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
+
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -21,6 +25,7 @@ public class ChattingRoom extends javax.swing.JFrame implements ActionListener{
 	private JLabel text;
 	private ChattingRoomSetup chattingRoomSetup;
 	private JTextArea inputTextArea;
+	private JButton sendText;
 	
 	//
 	private JScrollPane messageWindow;
@@ -36,7 +41,7 @@ public class ChattingRoom extends javax.swing.JFrame implements ActionListener{
 		this.add(getInputUserName(),null);
 		this.add(getText(),null);
 		this.add(getLoginButton(),null);
-		entryChattingRoom.addActionListener(LoginAction);;
+		entryChattingRoom.addActionListener(loginAction);;
 		this.setTitle("Login");
 		this.setVisible(true);
 	}
@@ -70,19 +75,29 @@ public class ChattingRoom extends javax.swing.JFrame implements ActionListener{
 	private JScrollPane getMessageWindow(){
 		if(messageWindow==null){
 			messageWindow=new JScrollPane();
-			messageWindow.setBounds(5, 5, 578, 500);
+			messageWindow.setBounds(5, 5, 578, 400);
 		}
 		return messageWindow;
 	}
 	
 	private JTextArea getTextInputArea(){
 		if(inputTextArea==null){
-			inputTextArea
+			inputTextArea = new JTextArea();
+			inputTextArea.setBounds(5, 410, 500, 145);
 		}
 		return inputTextArea;
 	}
 	
-	private ActionListener LoginAction = new ActionListener() {
+	private JButton getSendButton(){
+		if(sendText == null){
+			sendText=new JButton();
+			sendText.setText("Send");
+			sendText.setBounds(510, 460, 70, 40);
+		}
+		return sendText;
+	}
+	
+	private ActionListener loginAction = new ActionListener() {
 		
 		public void actionPerformed(ActionEvent e) {
 			// TODO Auto-generated method stub
@@ -93,14 +108,33 @@ public class ChattingRoom extends javax.swing.JFrame implements ActionListener{
 		}
 	};
 	
+	private ActionListener sendMessage = new ActionListener() {
+		
+		public void actionPerformed(ActionEvent e) {
+			// TODO Auto-generated method stub
+			if(!inputTextArea.getText().equals("")){
+				try {
+					chattingRoomSetup.sendMessage(chattingRoomSetup.getChannel(), inputTextArea.getText());
+					inputTextArea.setText(null);
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}
+		}
+	};
+	
 	private void entryChattingRoom(){
 		JPanel jPanel = (JPanel) getContentPane();
-		setSize(600,700);
+		setSize(600,600);
 		add(getMessageWindow(),null);
 		jPanel.setBounds(5, 510, 578, 180);
 		jPanel.remove(text);
 		jPanel.remove(inputUserName);
 		jPanel.remove(entryChattingRoom);
+		jPanel.add(getTextInputArea(),null);
+		jPanel.add(getSendButton(), null);
+		sendText.addActionListener(sendMessage);
 		repaint();
 	}
 	
