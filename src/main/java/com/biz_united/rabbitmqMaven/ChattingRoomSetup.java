@@ -7,21 +7,32 @@ public class ChattingRoomSetup {
 	
 	private Connection connection = null;
 	private Channel channel = null;
+	private Consumer consumer = null;
+	private String userName = null;
+	private String msg = "";
 	
+	public String getMsg() {
+		return msg;
+	}
+
+	public void setMsg(String msg) {
+		this.msg = msg;
+	}
+
+	public String getUserName() {
+		return userName;
+	}
+
 	public Connection getConnection() {
 		return connection;
 	}
 
-	public void setConnection(Connection connection) {
-		this.connection = connection;
+	public Consumer getConsumer() {
+		return consumer;
 	}
 
 	public Channel getChannel() {
 		return channel;
-	}
-
-	public void setChannel(Channel channel) {
-		this.channel = channel;
 	}
 
 	public ChattingRoomSetup(String userName) {
@@ -35,12 +46,24 @@ public class ChattingRoomSetup {
 			factory.setVirtualHost("test_vhosts");
 			this.connection = factory.newConnection();
 			this.channel = connection.createChannel();
+			this.userName = userName;
 
 			String queueSet = userName + "MessageQueue";
 			channel.queueDeclare(queueSet, true, false, false, null);
 			channel.queueBind(queueSet, "chattingRoomExchange", "");
 			String message = userName + " has joined the chattingroom";
 			channel.basicPublish("chattingRoomExchange", userName, null, message.getBytes());
+			consumer = new DefaultConsumer(channel) {
+				@Override
+				public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties,
+						byte[] body) throws IOException {
+					String message = new String(body, "UTF-8");
+					if(!message.equals("")||!message.equals(null)){
+						msg = message; 
+					}
+					//System.out.println(userName+" have received '" + message + "'");
+				}
+			};
 		} catch (Exception e) {
 			// TODO: handle exception
 			e.printStackTrace();
@@ -51,25 +74,14 @@ public class ChattingRoomSetup {
 		channel.basicPublish("chattingRoomExchange", "", null, message.getBytes());
 	}
 
-	public void receiveMessage(Channel channel, String userName) throws IOException {
-		Consumer consumer = new DefaultConsumer(channel) {
-			@Override
-			public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties,
-					byte[] body) throws IOException {
-				String message = new String(body, "UTF-8");
-				System.out.println(" Consumer have received '" + message + "'");
-			}
-		};
-		channel.basicConsume(userName + "MessageQueue", true, consumer);
-		//System.out.println(channel.basicConsume(userName + "MessageQueue", true, consumer));
+	public void receiveMessage(ChattingRoomSetup chattingRoomSetup) throws IOException {
+		channel.basicConsume(chattingRoomSetup.getUserName() + "MessageQueue", true, chattingRoomSetup.getConsumer());
 	}
 
 	public static void main(String[] args) throws IOException {
 		// TODO Auto-generated method stub
 		ChattingRoomSetup chattingRoomSetup = new ChattingRoomSetup("King");
-		chattingRoomSetup.receiveMessage(chattingRoomSetup.getChannel(), "King");
-		//chattingRoomSetup.sendMessage(chattingRoomSetup.getChannel(), "King");
-		chattingRoomSetup.receiveMessage(chattingRoomSetup.getChannel(), "King");
+		chattingRoomSetup.receiveMessage(chattingRoomSetup);
 	}
 
 }

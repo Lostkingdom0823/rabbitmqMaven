@@ -1,10 +1,12 @@
 package com.biz_united.rabbitmqMaven;
 
-import java.awt.BorderLayout;
-import java.awt.LayoutManager;
+import java.awt.Color;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -26,6 +28,8 @@ public class ChattingRoom extends javax.swing.JFrame implements ActionListener{
 	private ChattingRoomSetup chattingRoomSetup;
 	private JTextArea inputTextArea;
 	private JButton sendText;
+	private int count = 1;
+	private JPanel messageContainer = null;
 	
 	//
 	private JScrollPane messageWindow;
@@ -72,6 +76,7 @@ public class ChattingRoom extends javax.swing.JFrame implements ActionListener{
 		return text;
 	}
 	
+	//JSscrollPane只能容纳一个组件
 	private JScrollPane getMessageWindow(){
 		if(messageWindow==null){
 			messageWindow=new JScrollPane();
@@ -97,6 +102,15 @@ public class ChattingRoom extends javax.swing.JFrame implements ActionListener{
 		return sendText;
 	}
 	
+	private JPanel getMessageContainer(){
+		if(messageContainer == null){
+			messageContainer = new JPanel();
+			messageContainer.setLayout(null);
+			messageContainer.setBackground(Color.WHITE);
+		}
+		return messageContainer;
+	}
+	
 	private ActionListener loginAction = new ActionListener() {
 		
 		public void actionPerformed(ActionEvent e) {
@@ -104,6 +118,21 @@ public class ChattingRoom extends javax.swing.JFrame implements ActionListener{
 			if(!inputUserName.getText().equals("")){
 				chattingRoomSetup = new ChattingRoomSetup(inputUserName.getText());
 				entryChattingRoom();
+				Timer timer = new Timer();
+				timer.schedule(new TimerTask() {
+				        public void run() {
+				            try {
+								chattingRoomSetup.receiveMessage(chattingRoomSetup);
+								if(!chattingRoomSetup.getMsg().equals("")){
+									showMessage(chattingRoomSetup.getMsg());
+									chattingRoomSetup.setMsg("");
+								}
+							} catch (IOException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+				        }
+				}, 200 , 200);
 			}
 		}
 	};
@@ -114,7 +143,7 @@ public class ChattingRoom extends javax.swing.JFrame implements ActionListener{
 			// TODO Auto-generated method stub
 			if(!inputTextArea.getText().equals("")){
 				try {
-					chattingRoomSetup.sendMessage(chattingRoomSetup.getChannel(), inputTextArea.getText());
+					chattingRoomSetup.sendMessage(chattingRoomSetup.getChannel(), chattingRoomSetup.getUserName()+" say:"+inputTextArea.getText());
 					inputTextArea.setText(null);
 				} catch (IOException e1) {
 					// TODO Auto-generated catch block
@@ -127,8 +156,8 @@ public class ChattingRoom extends javax.swing.JFrame implements ActionListener{
 	private void entryChattingRoom(){
 		JPanel jPanel = (JPanel) getContentPane();
 		setSize(600,600);
-		add(getMessageWindow(),null);
-		jPanel.setBounds(5, 510, 578, 180);
+		jPanel.add(getMessageWindow(),null);
+		messageWindow.setVisible(true);
 		jPanel.remove(text);
 		jPanel.remove(inputUserName);
 		jPanel.remove(entryChattingRoom);
@@ -136,6 +165,22 @@ public class ChattingRoom extends javax.swing.JFrame implements ActionListener{
 		jPanel.add(getSendButton(), null);
 		sendText.addActionListener(sendMessage);
 		repaint();
+	}
+	
+	private void showMessage(String msg){
+		System.out.println(msg);
+		JScrollPane panel = getMessageWindow();
+		JPanel messageContainer = getMessageContainer();
+		JLabel showMessage = new JLabel();
+		showMessage.setFont(new Font("宋体",Font.BOLD, 16));
+		showMessage.setBounds(10, count*30, 500, 30);
+		showMessage.setText(msg);
+		showMessage.setVisible(true);
+		messageContainer.add(showMessage);
+		panel.setViewportView(messageContainer);
+	//	panel.add(showMessage,null);
+		panel.repaint();
+		count++;
 	}
 	
 	public void actionPerformed(ActionEvent e) {
